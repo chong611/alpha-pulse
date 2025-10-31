@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha Pulse — Multi-Site Market News & Sentiment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --accent-primary: #0d6efd;
+            --accent-hover: #0b5ed7;
+            --success: #198754;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --bullish: #10b981;
+            --bearish: #ef4444;
+            --neutral: #6b7280;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --border-color: #404040;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .right-panel {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        h3 {
+            font-size: 0.95rem;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            font-size: 0.85rem;
+        }
+
+        .summary-bar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .summary-item {
+            font-size: 0.9rem;
+        }
+
+        .summary-label {
+            color: var(--text-secondary);
+            margin-right: 5px;
+        }
+
+        .summary-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .filters-bar {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-item select,
+        .filter-item input {
+            width: auto;
+            min-width: 150px;
+        }
+
+        .results-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .result-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.2s;
+        }
+
+        .result-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .result-favicon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .result-content {
+            flex: 1;
+        }
+
+        .result-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .result-snippet {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .result-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-source {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .badge-bullish {
+            background: var(--bullish);
+            color: white;
+        }
+
+        .badge-bearish {
+            background: var(--bearish);
+            color: white;
+        }
+
+        .badge-neutral {
+            background: var(--neutral);
+            color: white;
+        }
+
+        .badge-ticker {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .comments-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .comment-item {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-right: 8px;
+        }
+
+        .comment-time {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .comment-text {
+            margin-top: 4px;
+            color: var(--text-primary);
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            color: var(--accent-primary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 5px 0;
+            margin-top: 10px;
+        }
+
+        .expand-btn:hover {
+            text-decoration: underline;
+        }
+
+        .dashboard-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .sentiment-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .sentiment-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .sentiment-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .sentiment-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .ticker-cell {
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .ticker-symbol {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .ticker-score {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 400px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast-warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .highlight {
+            background: rgba(255, 193, 7, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-top: 20px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        @media (max-width: 1200px) {
+            .right-panel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            .left-panel {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+            }
+            .main-content {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <h1>⚡ Alpha Pulse</h1>
+            
+            <div class="input-group">
+                <label>Keywords</label>
+                <input type="text" id="keywords" placeholder="e.g., AI chips, electric vehicles">
+            </div>
+
+            <div class="input-group">
+                <label>Tickers (comma-separated)</label>
+                <input type="text" id="tickers" placeholder="e.g., NVDA, AMD, TSLA">
+            </div>
+
+            <div class="input-group">
+                <label>Subreddits (comma-separated)</label>
+                <input type="text" id="subreddits" placeholder="e.g., wallstreetbets, stocks">
+            </div>
+
+            <div class="input-group">
+                <label>Time Window</label>
+                <select id="timeWindow">
+                    <option value="24h" selected>Last 24 hours</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="all">All time</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Max Items per Site</label>
+                <input type="number" id="maxItems" value="50" min="10" max="200">
+            </div>
+
+            <div class="input-group">
+                <label>Sort By</label>
+                <select id="sortBy">
+                    <option value="latest" selected>Latest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="relevance">Relevance</option>
+                    <option value="source">Source A-Z</option>
+                    <option value="title">Title A-Z</option>
+                </select>
+            </div>
+
+            <h3>Data Sources</h3>
+            <div class="checkbox-group">
+                <input type="checkbox" id="source-google-news" checked>
+                <label>Google News</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="source-reddit" checked>
+                <label>Reddit</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="source-yahoo" checked>
+                <label>Yahoo Finance</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="source-marketwatch" checked>
+                <label>MarketWatch</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="source-prnewswire" checked>
+                <label>PR Newswire</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="source-sec" checked>
+                <label>SEC EDGAR</label>
+            </div>
+
+            <div class="input-group">
+                <label>Custom URLs (one per line, use {query} placeholder)</label>
+                <textarea id="customUrls" placeholder="https://example.com/search?q={query}"></textarea>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="proxyMode">
+                <label>Enable Proxy Mode (CORS)</label>
+            </div>
+
+            <div class="input-group">
+                <label>Proxy URL (optional)</label>
+                <input type="url" id="proxyUrl" placeholder="https://corsproxy.io/?">
+            </div>
+
+            <button class="btn-primary" id="runBtn">▶ Run</button>
+            <button class="btn-secondary" id="stopBtn" disabled>⏹ Stop</button>
+            
+            <h3>Actions</h3>
+            <button class="btn-secondary" id="saveConfigBtn">💾 Save Config</button>
+            <button class="btn-secondary" id="loadConfigBtn">📂 Load Config</button>
+            <button class="btn-secondary" id="resetBtn">🔄 Reset to Defaults</button>
+            <button class="btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
+            <button class="btn-secondary" id="exportJsonBtn">📄 Export JSON</button>
+            <button class="btn-secondary" id="copyBriefBtn">📋 Copy Markdown Brief</button>
+            <button class="btn-secondary" id="webhookBtn">🔗 Send Webhook</button>
+            <button class="btn-secondary" id="xApiBtn">🔑 X API Settings</button>
+            <button class="btn-secondary" id="darkModeBtn">🌙 Toggle Dark Mode</button>
+
+            <div class="note">
+                For research only. Respect source TOS. Some sites require API keys (e.g., X).
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Summary Bar -->
+            <div class="summary-bar">
+                <div class="summary-item">
+                    <span class="summary-label">Total Results:</span>
+                    <span class="summary-value" id="totalResults">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Sites:</span>
+                    <span class="summary-value" id="sitesProgress">0/0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Elapsed:</span>
+                    <span class="summary-value" id="elapsedTime">0s</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Last Run:</span>
+                    <span class="summary-value" id="lastRun">Never</span>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="filters-bar">
+                <div class="filter-item">
+                    <label>Filter by Site:</label>
+                    <select id="filterSite">
+                        <option value="">All Sites</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Filter by Ticker:</label>
+                    <select id="filterTicker">
+                        <option value="">All Tickers</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Filter by Sentiment:</label>
+                    <select id="filterSentiment">
+                        <option value="">All</option>
+                        <option value="bullish">Bullish</option>
+                        <option value="neutral">Neutral</option>
+                        <option value="bearish">Bearish</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Min Buzz:</label>
+                    <div class="slider-container">
+                        <input type="range" id="minBuzz" min="0" max="100" value="0">
+                        <span class="slider-value" id="minBuzzValue">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div class="results-container" id="resultsContainer">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p>Enter keywords or tickers and click Run to fetch market news and sentiment</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="dashboard-card">
+                <div class="dashboard-title">Sentiment Overview</div>
+                <div class="sentiment-bar">
+                    <div class="sentiment-item">
+                        <div class="sentiment-count" style="color: var(--bullish);" id="bullishCount">0</div>
+                        <div class="sentiment-label">Bullish</div>
+                    </div>
+                    <div class="sentiment-item">
+                        <div class="sentiment-count" style="color: var(--neutral);" id="neutralCount">0</div>
+                        <div class="sentiment-label">Neutral</div>
+                    </div>
+                    <div class="sentiment-item">
+                        <div class="sentiment-count" style="color: var(--bearish);" id="bearishCount">0</div>
+                        <div class="sentiment-label">Bearish</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="dashboard-title">Top Tickers by Trade Score</div>
+                <div class="ticker-grid" id="tickerGrid">
+                    <div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 20px;">
+                        No data yet
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="dashboard-title">Source Distribution</div>
+                <div id="sourceDistribution" style="font-size: 0.85rem; color: var(--text-secondary);">
+                    No data yet
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- X API Modal -->
+    <div class="modal" id="xApiModal">
+        <div class="modal-content">
+            <span class="modal-close" id="xApiClose">&times;</span>
+            <div class="modal-header">X (Twitter) API Settings</div>
+            <div class="input-group">
+                <label>Bearer Token</label>
+                <input type="text" id="xBearerToken" placeholder="Enter your X API Bearer Token">
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+                If you have X API credentials, enter them here. Otherwise, the app will attempt HTML fetch (may be blocked).
+            </p>
+            <button class="btn-primary" id="saveXApiBtn">Save</button>
+        </div>
+    </div>
+
+    <!-- Webhook Modal -->
+    <div class="modal" id="webhookModal">
+        <div class="modal-content">
+            <span class="modal-close" id="webhookClose">&times;</span>
+            <div class="modal-header">Send Webhook</div>
+            <div class="input-group">
+                <label>Webhook URL</label>
+                <input type="url" id="webhookUrl" placeholder="https://hooks.zapier.com/...">
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px;">
+                Sends filtered items and aggregates to the specified URL (Make.com, Zapier, etc.)
+            </p>
+            <button class="btn-primary" id="sendWebhookBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // CONFIGURATION & STATE
+        // ============================================================================
+
+        // Editable ticker dictionary - add more tickers as needed
+        const TICKER_DICTIONARY = {
+            'AAPL': 'Apple Inc.',
+            'TSLA': 'Tesla Inc.',
+            'NVDA': 'NVIDIA Corporation',
+            'MSFT': 'Microsoft Corporation',
+            'AMZN': 'Amazon.com Inc.',
+            'META': 'Meta Platforms Inc.',
+            'GOOGL': 'Alphabet Inc.',
+            'AMD': 'Advanced Micro Devices Inc.',
+            'INTC': 'Intel Corporation',
+            'NFLX': 'Netflix Inc.',
+            'DIS': 'The Walt Disney Company',
+            'BA': 'Boeing Company',
+            '0700': 'Tencent Holdings (HK)',
+            '9988': 'Alibaba Group (HK)',
+            '3690': 'Meituan (HK)'
+        };
+
+        // Editable finance lexicon - Loughran-McDonald + VADER-style terms
+        const FINANCE_LEXICON = {
+            // Positive terms
+            'bullish': 2, 'rally': 2, 'surge': 2, 'soar': 2, 'gain': 1.5, 'profit': 1.5,
+            'growth': 1.5, 'strong': 1, 'positive': 1, 'upgrade': 1.5, 'beat': 1.5,
+            'outperform': 2, 'breakthrough': 2, 'innovation': 1, 'success': 1.5,
+            'opportunity': 1, 'momentum': 1.5, 'recovery': 1.5, 'optimistic': 1.5,
+            
+            // Negative terms
+            'bearish': -2, 'crash': -2, 'plunge': -2, 'tumble': -2, 'loss': -1.5,
+            'decline': -1.5, 'weak': -1, 'negative': -1, 'downgrade': -1.5, 'miss': -1.5,
+            'underperform': -2, 'crisis': -2, 'risk': -1, 'concern': -1, 'warning': -1.5,
+            'threat': -1.5, 'volatility': -1, 'uncertainty': -1, 'pessimistic': -1.5,
+            'bankruptcy': -2.5, 'fraud': -2.5, 'lawsuit': -1.5, 'investigation': -1.5
+        };
+
+        let appState = {
+            items: [],
+            filteredItems: [],
+            isRunning: false,
+            startTime: null,
+            abortController: null,
+            expandedItems: new Set()
+        };
+
+        // ============================================================================
+        // UTILITY FUNCTIONS
+        // ============================================================================
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function canonicalizeUrl(url) {
+            try {
+                const u = new URL(url);
+                u.hash = '';
+                u.search = u.search.split('&')
+                    .filter(p => !p.startsWith('utm_'))
+                    .join('&');
+                let path = u.pathname;
+                if (path.endsWith('/')) path = path.slice(0, -1);
+                return u.origin + path + u.search;
+            } catch {
+                return url;
+            }
+        }
+
+        function extractTickers(text, userTickers = []) {
+            const tickers = new Set();
+            
+            console.log('[extractTickers] Called with userTickers:', userTickers);
+            
+            // Add user-input tickers first (always include them)
+            userTickers.forEach(t => {
+                const clean = t.replace(/^\$/, '').replace(/^(NASDAQ|NYSE|HK):/, '').toUpperCase();
+                tickers.add(clean);
+                // Add to dictionary if not present
+                if (!TICKER_DICTIONARY[clean]) {
+                    TICKER_DICTIONARY[clean] = clean;
+                }
+            });
+            
+            const patterns = [
+                /\$([A-Z]{1,5})\b/g,                    // $TSLA
+                /\b([A-Z]{1,5}):\s*([A-Z]{1,5})\b/g,    // NASDAQ:TSLA
+                /\bNASDAQ:\s*([A-Z]{1,5})\b/gi,         // NASDAQ: TSLA
+                /\bNYSE:\s*([A-Z]{1,5})\b/gi,           // NYSE: BA
+                /\bHK:\s*(\d{4})\b/gi,                  // HK:0700
+                /\b(\d{4})\.HK\b/gi                     // 0700.HK
+            ];
+            
+            patterns.forEach(pattern => {
+                const matches = text.matchAll(pattern);
+                for (const match of matches) {
+                    const ticker = (match[2] || match[1]).toUpperCase();
+                    if (TICKER_DICTIONARY[ticker]) {
+                        tickers.add(ticker);
+                    }
+                }
+            });
+            
+            // Also check for plain ticker symbols from dictionary (e.g., "NVDA" or "AMD" in text)
+            Object.keys(TICKER_DICTIONARY).forEach(ticker => {
+                // Match whole word boundaries to avoid false positives
+                const regex = new RegExp(`\\b${ticker}\\b`, 'g');
+                if (regex.test(text)) {
+                    tickers.add(ticker);
+                }
+            });
+            
+            return Array.from(tickers);
+        }
+
+        function highlightKeywords(text, keywords) {
+            if (!keywords || keywords.length === 0) return text;
+            let result = text;
+            keywords.forEach(kw => {
+                const regex = new RegExp(`(${kw})`, 'gi');
+                result = result.replace(regex, '<span class="highlight">$1</span>');
+            });
+            return result;
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            const intervals = {
+                year: 31536000,
+                month: 2592000,
+                week: 604800,
+                day: 86400,
+                hour: 3600,
+                minute: 60
+            };
+            
+            for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+                const interval = Math.floor(seconds / secondsInUnit);
+                if (interval >= 1) {
+                    return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+                }
+            }
+            return 'just now';
+        }
+
+        // ============================================================================
+        // SENTIMENT & SCORING
+        // ============================================================================
+
+        function scoreSentiment(text, comments = []) {
+            const allText = text + ' ' + comments.map(c => c.text).join(' ');
+            const words = allText.toLowerCase().split(/\W+/);
+            let score = 0;
+            let count = 0;
+            
+            words.forEach(word => {
+                if (FINANCE_LEXICON[word]) {
+                    score += FINANCE_LEXICON[word];
+                    count++;
+                }
+            });
+            
+            if (count === 0) return 0;
+            const normalized = score / Math.sqrt(count);
+            return Math.max(-1, Math.min(1, normalized / 3));
+        }
+
+        function getSentimentLabel(score) {
+            if (score > 0.15) return 'bullish';
+            if (score < -0.15) return 'bearish';
+            return 'neutral';
+        }
+
+        function scoreBuzz(engagement, source, datetime) {
+            const now = Date.now();
+            const age = (now - datetime.getTime()) / 1000 / 3600; // hours
+            const recencyDecay = Math.pow(0.5, age / 6); // half-life 6 hours
+            
+            let normalizedEngagement = 0;
+            if (source === 'reddit') {
+                normalizedEngagement = (engagement.score || 0) + (engagement.comments || 0) * 2;
+            } else if (source === 'x') {
+                normalizedEngagement = (engagement.likes || 0) + (engagement.retweets || 0) * 3;
+            } else {
+                normalizedEngagement = engagement.score || 0;
+            }
+            
+            return normalizedEngagement * recencyDecay;
+        }
+
+        function scoreRelevance(item, keywords, tickers) {
+            const text = (item.title + ' ' + item.snippet).toLowerCase();
+            let score = 0;
+            
+            keywords.forEach(kw => {
+                const kwLower = kw.toLowerCase();
+                const titleMatches = (item.title.toLowerCase().match(new RegExp(kwLower, 'g')) || []).length;
+                const snippetMatches = (item.snippet.toLowerCase().match(new RegExp(kwLower, 'g')) || []).length;
+                score += titleMatches * 3 + snippetMatches;
+            });
+            
+            tickers.forEach(ticker => {
+                if (item.tickers.includes(ticker)) {
+                    score += 5;
+                }
+            });
+            
+            return score;
+        }
+
+        function scoreItem(item, keywords, tickers) {
+            const sentiment = item.sentiment_score;
+            const buzz = item.buzz_score;
+            const relevance = item.relevance_score;
+            
+            const sentimentNorm = (sentiment + 1) / 2; // 0 to 1
+            const buzzNorm = Math.min(buzz / 100, 1); // normalize
+            const relevanceNorm = Math.min(relevance / 20, 1); // normalize
+            
+            return Math.round((0.45 * buzzNorm + 0.35 * relevanceNorm + 0.20 * sentimentNorm) * 100);
+        }
+
+        // ============================================================================
+        // DATA FETCHING & PARSING
+        // ============================================================================
+
+        async function fetchWithProxy(url, proxyMode, proxyUrl) {
+            // Use corsproxy.io as default CORS proxy if proxy mode enabled but no URL provided
+            const defaultProxy = 'https://corsproxy.io/?';
+            let finalUrl = url;
+            
+            if (proxyMode) {
+                const proxy = proxyUrl || defaultProxy;
+                finalUrl = proxy + encodeURIComponent(url);
+            }
+            
+            try {
+                const response = await fetch(finalUrl, {
+                    signal: appState.abortController.signal,
+                    mode: 'cors'
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response;
+            } catch (error) {
+                // If CORS error and proxy mode is off, suggest enabling it
+                if (error.name === 'TypeError' && !proxyMode) {
+                    throw new Error('CORS blocked. Enable Proxy Mode to bypass.');
+                }
+                throw error;
+            }
+        }
+
+        async function parseRSS(xml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = [];
+            
+            doc.querySelectorAll('item, entry').forEach(item => {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent || item.querySelector('link')?.getAttribute('href') || '';
+                const pubDate = item.querySelector('pubDate, published')?.textContent || '';
+                const description = item.querySelector('description, summary')?.textContent || '';
+                
+                if (title && link) {
+                    items.push({
+                        title: title.trim(),
+                        url: link.trim(),
+                        datetime: pubDate ? new Date(pubDate) : new Date(),
+                        snippet: description.replace(/<[^>]*>/g, '').substring(0, 300)
+                    });
+                }
+            });
+            
+            return items;
+        }
+
+        async function parseReddit(data, includeComments = true) {
+            const items = [];
+            const posts = data?.data?.children || [];
+            
+            for (const post of posts) {
+                const p = post.data;
+                const item = {
+                    title: p.title,
+                    url: 'https://reddit.com' + p.permalink,
+                    datetime: new Date(p.created_utc * 1000),
+                    snippet: (p.selftext || '').substring(0, 300),
+                    author: p.author,
+                    subreddit: p.subreddit,
+                    engagement: {
+                        score: p.score,
+                        comments: p.num_comments
+                    },
+                    comments: []
+                };
+                
+                if (includeComments && p.num_comments > 0) {
+                    try {
+                        const commentsUrl = `https://www.reddit.com${p.permalink}.json`;
+                        const commentsResp = await fetch(commentsUrl);
+                        const commentsData = await commentsResp.json();
+                        const commentsList = commentsData[1]?.data?.children || [];
+                        
+                        item.comments = commentsList
+                            .slice(0, 5)
+                            .map(c => ({
+                                author: c.data.author,
+                                text: c.data.body?.substring(0, 200) || '',
+                                time: new Date(c.data.created_utc * 1000)
+                            }));
+                    } catch (e) {
+                        console.warn('Failed to fetch comments:', e);
+                    }
+                }
+                
+                items.push(item);
+            }
+            
+            return items;
+        }
+
+        async function parseX(html) {
+            // Note: X/Twitter HTML parsing is complex and may be blocked
+            // This is a placeholder - in production, use API if available
+            showToast('X (Twitter) HTML parsing is limited. Consider using API credentials.', 'warning');
+            return [];
+        }
+
+        async function fetchGoogleNews(query, proxyMode, proxyUrl) {
+            try {
+                const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
+                const response = await fetchWithProxy(url, proxyMode, proxyUrl);
+                const xml = await response.text();
+                const items = await parseRSS(xml);
+                
+                return items.map(item => ({
+                    ...item,
+                    source: 'google-news',
+                    site: 'news.google.com'
+                }));
+            } catch (e) {
+                showToast(`Google News error: ${e.message}`, 'error');
+                return [];
+            }
+        }
+
+        async function fetchReddit(query, sort, timeRange, proxyMode, proxyUrl) {
+            try {
+                const url = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=${sort}&t=${timeRange}&limit=50`;
+                const response = await fetchWithProxy(url, proxyMode, proxyUrl);
+                const data = await response.json();
+                const items = await parseReddit(data);
+                
+                return items.map(item => ({
+                    ...item,
+                    source: 'reddit',
+                    site: 'reddit.com'
+                }));
+            } catch (e) {
+                showToast(`Reddit error: ${e.message}`, 'error');
+                return [];
+            }
+        }
+
+        async function fetchYahooFinance(tickers, proxyMode, proxyUrl) {
+            if (!tickers || tickers.length === 0) return [];
+            
+            try {
+                const tickerStr = tickers.join(',');
+                const url = `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${tickerStr}&region=US&lang=en-US`;
+                const response = await fetchWithProxy(url, proxyMode, proxyUrl);
+                const xml = await response.text();
+                const items = await parseRSS(xml);
+                
+                return items.map(item => ({
+                    ...item,
+                    source: 'yahoo-finance',
+                    site: 'finance.yahoo.com'
+                }));
+            } catch (e) {
+                showToast(`Yahoo Finance error: ${e.message}`, 'error');
+                return [];
+            }
+        }
+
+        async function fetchPRNewswire(proxyMode, proxyUrl) {
+            try {
+                const url = 'https://www.prnewswire.com/rss/all-news.rss';
+                const response = await fetchWithProxy(url, proxyMode, proxyUrl);
+                const xml = await response.text();
+                const items = await parseRSS(xml);
+                
+                return items.map(item => ({
+                    ...item,
+                    source: 'prnewswire',
+                    site: 'prnewswire.com'
+                }));
+            } catch (e) {
+                showToast(`PR Newswire error: ${e.message}`, 'error');
+                return [];
+            }
+        }
+
+        async function fetchSEC(proxyMode, proxyUrl) {
+            try {
+                const url = 'https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&company=&dateb=&owner=include&start=0&count=40&output=atom';
+                const response = await fetchWithProxy(url, proxyMode, proxyUrl);
+                const xml = await response.text();
+                const items = await parseRSS(xml);
+                
+                return items.map(item => ({
+                    ...item,
+                    source: 'sec-edgar',
+                    site: 'sec.gov'
+                }));
+            } catch (e) {
+                showToast(`SEC EDGAR error: ${e.message}`, 'error');
+                return [];
+            }
+        }
+
+        // ============================================================================
+        // MAIN FETCH ORCHESTRATION
+        // ============================================================================
+
+        async function runFetch() {
+            const keywords = document.getElementById('keywords').value.trim().split(',').map(k => k.trim()).filter(k => k);
+            const tickersInput = document.getElementById('tickers').value;
+            console.log('[runFetch] Tickers input field value:', tickersInput);
+            const tickers = tickersInput.trim().split(',').map(t => t.trim().toUpperCase()).filter(t => t);
+            console.log('[runFetch] Parsed tickers array:', tickers);
+            const subreddits = document.getElementById('subreddits').value.trim().split(',').map(s => s.trim()).filter(s => s);
+            const timeWindow = document.getElementById('timeWindow').value;
+            const maxItems = parseInt(document.getElementById('maxItems').value);
+            
+            if (keywords.length === 0 && tickers.length === 0) {
+                showToast('Please enter keywords or tickers', 'warning');
+                return;
+            }
+            
+            appState.isRunning = true;
+            appState.startTime = Date.now();
+            appState.items = [];
+            appState.abortController = new AbortController();
+            
+            document.getElementById('runBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            showToast('Fetching news from backend server...', 'info');
+            
+            let allItems = [];
+            let sourcesQueried = 0;
+            try {
+                // Call backend REST API to fetch news
+                const customUrlsValue = document.getElementById('customUrls').value;
+                
+                const requestBody = {
+                    keywords: keywords,
+                    tickers: tickers,
+                    subreddits: subreddits,
+                    timeWindow: timeWindow,
+                    maxItems: maxItems,
+                    customUrls: customUrlsValue,
+                    sources: {
+                        googleNews: document.getElementById('source-google-news')?.checked || false,
+                        reddit: document.getElementById('source-reddit')?.checked || false,
+                        x: false, // Removed from UI
+                        yahooFinance: document.getElementById('source-yahoo')?.checked || false,
+                        reuters: false, // Removed from UI
+                        marketWatch: document.getElementById('source-marketwatch')?.checked || false,
+                        prNewswire: document.getElementById('source-prnewswire')?.checked || false,
+                        businessWire: false, // Removed from UI
+                        secEdgar: document.getElementById('source-sec')?.checked || false,
+                    }
+                };
+                
+                const response = await fetch('/api/news/fetch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                    signal: appState.abortController.signal,
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Backend error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Backend response:', result);
+                console.log('Items received:', result.items?.length || 0);
+                
+                // Convert datetime strings back to Date objects
+                allItems = result.items.map(item => ({
+                    ...item,
+                    datetime: new Date(item.datetime)
+                }));
+                
+                console.log('Processed items:', allItems.length);
+                sourcesQueried = result.sourcesQueried;
+                document.getElementById('sitesProgress').textContent = `${result.sourcesQueried}/${result.sourcesQueried}`;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    showToast('Fetch cancelled', 'info');
+                } else {
+                    showToast(`Error: ${error.message}`, 'error');
+                    console.error('Fetch error:', error);
+                }
+                appState.isRunning = false;
+                document.getElementById('runBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                return;
+            }
+            
+            // Process items
+            const processedItems = allItems.map((item, index) => {
+                try {
+                    const text = item.title + ' ' + item.snippet;
+                    const itemTickers = extractTickers(text, tickers);
+                    
+
+                    const comments = item.comments || [];
+                    
+                    let sentiment_score, sentiment_label, buzz_score, relevance_score;
+                    try {
+                        sentiment_score = scoreSentiment(text, comments);
+                    } catch (e) {
+                        console.error('[ERROR] scoreSentiment failed:', e.message);
+                        sentiment_score = 0;
+                    }
+                    try {
+                        sentiment_label = getSentimentLabel(sentiment_score);
+                    } catch (e) {
+                        console.error('[ERROR] getSentimentLabel failed:', e.message);
+                        sentiment_label = 'neutral';
+                    }
+                    try {
+                        buzz_score = scoreBuzz(item.engagement || {}, item.source, item.datetime);
+                    } catch (e) {
+                        console.error('[ERROR] scoreBuzz failed:', e.message);
+                        buzz_score = 0;
+                    }
+                    try {
+                        relevance_score = scoreRelevance(item, keywords, tickers);
+                    } catch (e) {
+                        console.error('[ERROR] scoreRelevance failed:', e.message);
+                        relevance_score = 0;
+                    }
+                
+                    let canonical_url;
+                    try {
+                        canonical_url = canonicalizeUrl(item.url);
+                    } catch (e) {
+                        console.error('[ERROR] canonicalizeUrl failed:', e.message);
+                        canonical_url = item.url;
+                    }
+                    
+                    return {
+                        ...item,
+                        tickers: itemTickers,
+                        sentiment_score,
+                        sentiment_label,
+                        buzz_score,
+                        relevance_score,
+                        trade_score: 0,
+                        canonical_url
+                    };
+                } catch (err) {
+                    console.error(`Error processing item ${index}:`, err, item);
+                    // Return a minimal version if processing fails
+                    return {
+                        ...item,
+                        tickers: [],
+                        sentiment_score: 0,
+                        sentiment_label: 'neutral',
+                        buzz_score: 0,
+                        relevance_score: 0,
+                        trade_score: 0,
+                        canonical_url: item.url
+                    };
+                }
+            });
+            
+            // Calculate trade scores
+            processedItems.forEach(item => {
+                item.trade_score = scoreItem(item, keywords, tickers);
+            });
+            
+            // Deduplicate
+            const urlMap = new Map();
+            processedItems.forEach(item => {
+                const existing = urlMap.get(item.canonical_url);
+                if (!existing || item.snippet.length > existing.snippet.length) {
+                    urlMap.set(item.canonical_url, item);
+                }
+            });
+            
+            appState.items = Array.from(urlMap.values());
+            
+            // Apply sorting
+            applySorting();
+            
+            // Update UI
+            updateFilters();
+            applyFilters();
+            updateDashboard();
+            
+            document.getElementById('totalResults').textContent = appState.items.length;
+            document.getElementById('lastRun').textContent = new Date().toLocaleTimeString();
+            
+            appState.isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            showToast(`Fetched ${appState.items.length} unique items from ${sourcesQueried} sources`, 'success');
+        }
+
+        function stopFetch() {
+            if (appState.abortController) {
+                appState.abortController.abort();
+            }
+            appState.isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            showToast('Fetch stopped', 'warning');
+        }
+
+        // ============================================================================
+        // SORTING & FILTERING
+        // ============================================================================
+
+        function applySorting() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            switch (sortBy) {
+                case 'latest':
+                    appState.items.sort((a, b) => b.datetime - a.datetime);
+                    break;
+                case 'oldest':
+                    appState.items.sort((a, b) => a.datetime - b.datetime);
+                    break;
+                case 'relevance':
+                    appState.items.sort((a, b) => b.relevance_score - a.relevance_score || b.buzz_score - a.buzz_score);
+                    break;
+                case 'source':
+                    appState.items.sort((a, b) => a.source.localeCompare(b.source));
+                    break;
+                case 'title':
+                    appState.items.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+            }
+        }
+
+        function applyFilters() {
+            const filterSite = document.getElementById('filterSite').value;
+            const filterTicker = document.getElementById('filterTicker').value;
+            const filterSentiment = document.getElementById('filterSentiment').value;
+            const minBuzz = parseInt(document.getElementById('minBuzz').value);
+            
+            appState.filteredItems = appState.items.filter(item => {
+                if (filterSite && item.source !== filterSite) return false;
+                if (filterTicker && !item.tickers.includes(filterTicker)) return false;
+                if (filterSentiment && item.sentiment_label !== filterSentiment) return false;
+                if (item.buzz_score < minBuzz) return false;
+                return true;
+            });
+            
+            renderResults();
+        }
+
+        function updateFilters() {
+            // Update site filter
+            const sites = [...new Set(appState.items.map(i => i.source))].sort();
+            const siteSelect = document.getElementById('filterSite');
+            siteSelect.innerHTML = '<option value="">All Sites</option>';
+            sites.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site;
+                option.textContent = site;
+                siteSelect.appendChild(option);
+            });
+            
+            // Update ticker filter
+            const allTickers = new Set();
+            appState.items.forEach(item => item.tickers.forEach(t => allTickers.add(t)));
+            const tickerSelect = document.getElementById('filterTicker');
+            tickerSelect.innerHTML = '<option value="">All Tickers</option>';
+            Array.from(allTickers).sort().forEach(ticker => {
+                const option = document.createElement('option');
+                option.value = ticker;
+                option.textContent = ticker;
+                tickerSelect.appendChild(option);
+            });
+        }
+
+        // ============================================================================
+        // UI RENDERING
+        // ============================================================================
+
+        function renderResults() {
+            const container = document.getElementById('resultsContainer');
+            
+            if (appState.filteredItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>No results match your filters</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const keywords = document.getElementById('keywords').value.trim().split(',').map(k => k.trim()).filter(k => k);
+            
+            container.innerHTML = appState.filteredItems.map((item, idx) => {
+                const isExpanded = appState.expandedItems.has(idx);
+                const commentsHtml = item.comments && item.comments.length > 0 ? `
+                    <button class="expand-btn" onclick="toggleComments(${idx})">
+                        ${isExpanded ? '▼' : '▶'} ${item.comments.length} comments
+                    </button>
+                    ${isExpanded ? `
+                        <div class="comments-section">
+                            ${item.comments.map(c => `
+                                <div class="comment-item">
+                                    <div>
+                                        <span class="comment-author">${c.author}</span>
+                                        <span class="comment-time">${timeAgo(c.time)}</span>
+                                    </div>
+                                    <div class="comment-text">${c.text}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                ` : '';
+                
+                return `
+                    <div class="result-item">
+                        <div class="result-header">
+                            <img class="result-favicon" src="https://www.google.com/s2/favicons?domain=${item.site}" alt="">
+                            <div class="result-content">
+                                <a href="${item.url}" target="_blank" class="result-title">${item.title}</a>
+                                <div class="result-meta">
+                                    <span>📅 ${timeAgo(item.datetime)}</span>
+                                    ${item.author ? `<span>👤 ${item.author}</span>` : ''}
+                                    ${item.subreddit ? `<span>📍 r/${item.subreddit}</span>` : ''}
+                                    ${item.engagement?.comments ? `<span>💬 ${item.engagement.comments}</span>` : ''}
+                                    ${item.engagement?.score ? `<span>⬆️ ${item.engagement.score}</span>` : ''}
+                                </div>
+                                <div class="result-snippet">${highlightKeywords(item.snippet, keywords)}</div>
+                                <div class="result-badges">
+                                    <span class="badge badge-source">${item.source}</span>
+                                    <span class="badge badge-${item.sentiment_label}">${item.sentiment_label}</span>
+                                    ${item.tickers.map(t => `<span class="badge badge-ticker">$${t}</span>`).join('')}
+                                    <span class="badge badge-source" title="Trade Score: 0.45·buzz + 0.35·relevance + 0.20·sentiment">
+                                        📊 ${item.trade_score}
+                                    </span>
+                                </div>
+                                ${commentsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleComments(idx) {
+            if (appState.expandedItems.has(idx)) {
+                appState.expandedItems.delete(idx);
+            } else {
+                appState.expandedItems.add(idx);
+            }
+            renderResults();
+        }
+
+        function updateDashboard() {
+            // Sentiment counts
+            const bullish = appState.items.filter(i => i.sentiment_label === 'bullish').length;
+            const neutral = appState.items.filter(i => i.sentiment_label === 'neutral').length;
+            const bearish = appState.items.filter(i => i.sentiment_label === 'bearish').length;
+            
+            document.getElementById('bullishCount').textContent = bullish;
+            document.getElementById('neutralCount').textContent = neutral;
+            document.getElementById('bearishCount').textContent = bearish;
+            
+            // Top tickers
+            const tickerMap = new Map();
+            appState.items.forEach(item => {
+                if (!item.tickers || !Array.isArray(item.tickers)) {
+                    return;
+                }
+                item.tickers.forEach(ticker => {
+                    if (!tickerMap.has(ticker)) {
+                        tickerMap.set(ticker, {
+                            ticker,
+                            count: 0,
+                            totalScore: 0,
+                            sentimentSum: 0
+                        });
+                    }
+                    const data = tickerMap.get(ticker);
+                    data.count++;
+                    data.totalScore += item.trade_score;
+                    data.sentimentSum += item.sentiment_score;
+                });
+            });
+            
+            const topTickers = Array.from(tickerMap.values())
+                .map(t => ({
+                    ...t,
+                    avgScore: Math.round(t.totalScore / t.count)
+                }))
+                .sort((a, b) => b.avgScore - a.avgScore)
+                .slice(0, 12);
+            
+
+            
+            const tickerGrid = document.getElementById('tickerGrid');
+            if (topTickers.length === 0) {
+                tickerGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 20px;">No data yet</div>';
+            } else {
+                tickerGrid.innerHTML = topTickers.map(t => `
+                    <div class="ticker-cell">
+                        <div class="ticker-symbol">$${t.ticker}</div>
+                        <div class="ticker-score">${t.avgScore}</div>
+                    </div>
+                `).join('');
+            }
+            
+            // Source distribution
+            const sourceMap = new Map();
+            appState.items.forEach(item => {
+                sourceMap.set(item.source, (sourceMap.get(item.source) || 0) + 1);
+            });
+            
+            const sourceDistribution = document.getElementById('sourceDistribution');
+            if (sourceMap.size === 0) {
+                sourceDistribution.innerHTML = 'No data yet';
+            } else {
+                sourceDistribution.innerHTML = Array.from(sourceMap.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([source, count]) => `
+                        <div style="margin-bottom: 8px;">
+                            <strong>${source}</strong>: ${count} items
+                        </div>
+                    `).join('');
+            }
+        }
+
+        // ============================================================================
+        // EXPORT & WEBHOOK
+        // ============================================================================
+
+        function exportCSV() {
+            if (appState.filteredItems.length === 0) {
+                showToast('No data to export', 'warning');
+                return;
+            }
+            
+            const headers = ['Title', 'URL', 'Source', 'Date', 'Sentiment', 'Trade Score', 'Tickers', 'Snippet'];
+            const rows = appState.filteredItems.map(item => [
+                item.title,
+                item.url,
+                item.source,
+                item.datetime.toISOString(),
+                item.sentiment_label,
+                item.trade_score,
+                item.tickers.join(';'),
+                item.snippet.replace(/"/g, '""')
+            ]);
+            
+            const csv = [headers, ...rows]
+                .map(row => row.map(cell => `"${cell}"`).join(','))
+                .join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `alpha-pulse-${Date.now()}.csv`;
+            a.click();
+            
+            showToast('CSV exported successfully', 'success');
+        }
+
+        function exportJSON() {
+            if (appState.filteredItems.length === 0) {
+                showToast('No data to export', 'warning');
+                return;
+            }
+            
+            const json = JSON.stringify(appState.filteredItems, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `alpha-pulse-${Date.now()}.json`;
+            a.click();
+            
+            showToast('JSON exported successfully', 'success');
+        }
+
+        function generateMarkdownBrief() {
+            if (appState.filteredItems.length === 0) {
+                showToast('No data to generate brief', 'warning');
+                return;
+            }
+            
+            const bullish = appState.filteredItems.filter(i => i.sentiment_label === 'bullish');
+            const bearish = appState.filteredItems.filter(i => i.sentiment_label === 'bearish');
+            const neutral = appState.filteredItems.filter(i => i.sentiment_label === 'neutral');
+            
+            // Top tickers
+            const tickerMap = new Map();
+            appState.filteredItems.forEach(item => {
+                item.tickers.forEach(ticker => {
+                    if (!tickerMap.has(ticker)) {
+                        tickerMap.set(ticker, { ticker, items: [], sentimentSum: 0, scoreSum: 0 });
+                    }
+                    const data = tickerMap.get(ticker);
+                    data.items.push(item);
+                    data.sentimentSum += item.sentiment_score;
+                    data.scoreSum += item.trade_score;
+                });
+            });
+            
+            const topBullish = Array.from(tickerMap.values())
+                .filter(t => t.sentimentSum > 0)
+                .sort((a, b) => b.sentimentSum - a.sentimentSum)
+                .slice(0, 10);
+            
+            const topBearish = Array.from(tickerMap.values())
+                .filter(t => t.sentimentSum < 0)
+                .sort((a, b) => a.sentimentSum - b.sentimentSum)
+                .slice(0, 10);
+            
+            let md = `# Alpha Pulse Daily Trader Brief\n\n`;
+            md += `Generated: ${new Date().toLocaleString()}\n\n`;
+            
+            md += `## Market Mood Snapshot\n\n`;
+            md += `- **Bullish**: ${bullish.length} items\n`;
+            md += `- **Neutral**: ${neutral.length} items\n`;
+            md += `- **Bearish**: ${bearish.length} items\n\n`;
+            
+            md += `## Top 10 Bullish Tickers\n\n`;
+            md += `| Ticker | Avg Score | Sample Headline | Link |\n`;
+            md += `|--------|-----------|-----------------|------|\n`;
+            topBullish.forEach(t => {
+                const sample = t.items[0];
+                md += `| $${t.ticker} | ${Math.round(t.scoreSum / t.items.length)} | ${sample.title.substring(0, 50)}... | [Link](${sample.url}) |\n`;
+            });
+            md += `\n`;
+            
+            md += `## Top 10 Bearish Tickers\n\n`;
+            md += `| Ticker | Avg Score | Sample Headline | Link |\n`;
+            md += `|--------|-----------|-----------------|------|\n`;
+            topBearish.forEach(t => {
+                const sample = t.items[0];
+                md += `| $${t.ticker} | ${Math.round(t.scoreSum / t.items.length)} | ${sample.title.substring(0, 50)}... | [Link](${sample.url}) |\n`;
+            });
+            md += `\n`;
+            
+            md += `## Notable Threads\n\n`;
+            const topCommented = appState.filteredItems
+                .filter(i => i.engagement?.comments)
+                .sort((a, b) => (b.engagement.comments || 0) - (a.engagement.comments || 0))
+                .slice(0, 5);
+            
+            topCommented.forEach(item => {
+                md += `- **${item.title}** (${item.engagement.comments} comments) - [Link](${item.url})\n`;
+            });
+            md += `\n`;
+            
+            md += `## Fresh Filings & PR Highlights\n\n`;
+            const filings = appState.filteredItems.filter(i => i.source === 'sec-edgar' || i.source === 'prnewswire');
+            filings.slice(0, 5).forEach(item => {
+                md += `- **${item.title}** - [Link](${item.url})\n`;
+            });
+            
+            navigator.clipboard.writeText(md);
+            showToast('Markdown brief copied to clipboard', 'success');
+        }
+
+        function sendWebhook() {
+            const modal = document.getElementById('webhookModal');
+            modal.classList.add('active');
+        }
+
+        async function executeSendWebhook() {
+            const url = document.getElementById('webhookUrl').value.trim();
+            
+            if (!url) {
+                showToast('Please enter a webhook URL', 'warning');
+                return;
+            }
+            
+            if (appState.filteredItems.length === 0) {
+                showToast('No data to send', 'warning');
+                return;
+            }
+            
+            const payload = {
+                run_id: Date.now(),
+                generated_at: new Date().toISOString(),
+                items: appState.filteredItems,
+                aggregates: {
+                    total: appState.filteredItems.length,
+                    bullish: appState.filteredItems.filter(i => i.sentiment_label === 'bullish').length,
+                    neutral: appState.filteredItems.filter(i => i.sentiment_label === 'neutral').length,
+                    bearish: appState.filteredItems.filter(i => i.sentiment_label === 'bearish').length
+                }
+            };
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    showToast('Webhook sent successfully', 'success');
+                    document.getElementById('webhookModal').classList.remove('active');
+                } else {
+                    showToast(`Webhook failed: ${response.status}`, 'error');
+                }
+            } catch (e) {
+                showToast(`Webhook error: ${e.message}`, 'error');
+            }
+        }
+
+        // ============================================================================
+        // CONFIGURATION
+        // ============================================================================
+
+        function saveConfig() {
+            const config = {
+                keywords: document.getElementById('keywords').value,
+                tickers: document.getElementById('tickers').value,
+                subreddits: document.getElementById('subreddits').value,
+                timeWindow: document.getElementById('timeWindow').value,
+                maxItems: document.getElementById('maxItems').value,
+                sortBy: document.getElementById('sortBy').value,
+                sources: {
+                    'google-news': document.getElementById('source-google-news')?.checked || false,
+                    'reddit': document.getElementById('source-reddit')?.checked || false,
+                    'x': false, // Removed from UI
+                    'yahoo': document.getElementById('source-yahoo')?.checked || false,
+                    'reuters': false, // Removed from UI
+                    'marketwatch': document.getElementById('source-marketwatch')?.checked || false,
+                    'prnewswire': document.getElementById('source-prnewswire')?.checked || false,
+                    'businesswire': false, // Removed from UI
+                    'sec': document.getElementById('source-sec')?.checked || false
+                },
+                customUrls: document.getElementById('customUrls').value,
+                proxyMode: document.getElementById('proxyMode').checked,
+                proxyUrl: document.getElementById('proxyUrl').value,
+                darkMode: document.body.classList.contains('dark-mode')
+            };
+            
+            localStorage.setItem('alphaPulseConfig', JSON.stringify(config));
+            showToast('Configuration saved', 'success');
+        }
+
+        function loadConfig() {
+            const saved = localStorage.getItem('alphaPulseConfig');
+            if (!saved) {
+                showToast('No saved configuration found', 'warning');
+                return;
+            }
+            
+            const config = JSON.parse(saved);
+            
+            document.getElementById('keywords').value = config.keywords || '';
+            document.getElementById('tickers').value = config.tickers || '';
+            document.getElementById('subreddits').value = config.subreddits || '';
+            document.getElementById('timeWindow').value = config.timeWindow || '24h';
+            document.getElementById('maxItems').value = config.maxItems || 50;
+            document.getElementById('sortBy').value = config.sortBy || 'latest';
+            
+            if (config.sources) {
+                Object.entries(config.sources).forEach(([source, enabled]) => {
+                    const checkbox = document.getElementById(`source-${source}`);
+                    if (checkbox) checkbox.checked = enabled;
+                });
+            }
+            
+            document.getElementById('customUrls').value = config.customUrls || '';
+            document.getElementById('proxyMode').checked = config.proxyMode || false;
+            document.getElementById('proxyUrl').value = config.proxyUrl || '';
+            
+            if (config.darkMode) {
+                document.body.classList.add('dark-mode');
+            }
+            
+            showToast('Configuration loaded', 'success');
+        }
+
+        function resetToDefaults() {
+            document.getElementById('keywords').value = '';
+            document.getElementById('tickers').value = '';
+            document.getElementById('subreddits').value = '';
+            document.getElementById('timeWindow').value = '24h';
+            document.getElementById('maxItems').value = 50;
+            document.getElementById('sortBy').value = 'latest';
+            
+            document.querySelectorAll('[id^="source-"]').forEach(cb => cb.checked = true);
+            
+            document.getElementById('customUrls').value = '';
+            document.getElementById('proxyMode').checked = false;
+            document.getElementById('proxyUrl').value = '';
+            
+            showToast('Reset to defaults', 'success');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // ============================================================================
+        // EVENT LISTENERS
+        // ============================================================================
+
+        document.getElementById('runBtn').addEventListener('click', runFetch);
+        document.getElementById('stopBtn').addEventListener('click', stopFetch);
+        document.getElementById('saveConfigBtn').addEventListener('click', saveConfig);
+        document.getElementById('loadConfigBtn').addEventListener('click', loadConfig);
+        document.getElementById('resetBtn').addEventListener('click', resetToDefaults);
+        document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
+        document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
+        document.getElementById('copyBriefBtn').addEventListener('click', generateMarkdownBrief);
+        document.getElementById('webhookBtn').addEventListener('click', sendWebhook);
+        document.getElementById('darkModeBtn').addEventListener('click', toggleDarkMode);
+
+        document.getElementById('filterSite').addEventListener('change', applyFilters);
+        document.getElementById('filterTicker').addEventListener('change', applyFilters);
+        document.getElementById('filterSentiment').addEventListener('change', applyFilters);
+        document.getElementById('minBuzz').addEventListener('input', (e) => {
+            document.getElementById('minBuzzValue').textContent = e.target.value;
+            applyFilters();
+        });
+
+        document.getElementById('sortBy').addEventListener('change', () => {
+            applySorting();
+            applyFilters();
+        });
+
+        // X API Modal
+        document.getElementById('xApiBtn').addEventListener('click', () => {
+            document.getElementById('xApiModal').classList.add('active');
+        });
+        document.getElementById('xApiClose').addEventListener('click', () => {
+            document.getElementById('xApiModal').classList.remove('active');
+        });
+        document.getElementById('saveXApiBtn').addEventListener('click', () => {
+            const token = document.getElementById('xBearerToken').value;
+            localStorage.setItem('xBearerToken', token);
+            showToast('X API token saved', 'success');
+            document.getElementById('xApiModal').classList.remove('active');
+        });
+
+        // Webhook Modal
+        document.getElementById('webhookClose').addEventListener('click', () => {
+            document.getElementById('webhookModal').classList.remove('active');
+        });
+        document.getElementById('sendWebhookBtn').addEventListener('click', executeSendWebhook);
+
+        // Elapsed time updater
+        setInterval(() => {
+            if (appState.isRunning && appState.startTime) {
+                const elapsed = Math.floor((Date.now() - appState.startTime) / 1000);
+                document.getElementById('elapsedTime').textContent = `${elapsed}s`;
+            }
+        }, 1000);
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Auto-load last config on startup
+        const autoLoad = localStorage.getItem('alphaPulseConfig');
+        if (autoLoad) {
+            loadConfig();
+        }
+    </script>
+</body>
+</html>
+
+<!-- 
+HOSTING INSTRUCTIONS:
+
+1. GitHub Pages:
+   - Create a new repository
+   - Upload this file as index.html
+   - Go to Settings > Pages
+   - Select main branch as source
+   - Your app will be available at https://username.github.io/repo-name
+
+2. Netlify:
+   - Drag and drop this file to netlify.com/drop
+   - Or connect your GitHub repo for continuous deployment
+
+3. Vercel:
+   - Install Vercel CLI: npm i -g vercel
+   - Run: vercel --prod
+   - Or connect your GitHub repo
+
+4. Local:
+   - Simply open this HTML file in any modern browser
+   - For CORS issues, use the proxy mode toggle
+
+CUSTOMIZATION POINTS:
+
+1. Edit TICKER_DICTIONARY (line ~180) to add more tickers
+2. Edit FINANCE_LEXICON (line ~190) to customize sentiment terms
+3. Add more data sources in the runFetch() function (line ~600)
+4. Customize colors in CSS :root variables (line ~10)
+5. Adjust scoring weights in scoreItem() function (line ~420)
+-->

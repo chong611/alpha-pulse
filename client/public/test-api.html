@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Alpha Pulse API Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Fetching...';
+            
+            try {
+                const response = await fetch('/api/news/fetch', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        keywords: ['AI'],
+                        tickers: ['AMD', 'NVDA'],
+                        timeWindow: '24h',
+                        maxItems: 50,
+                        sources: {
+                            googleNews: true,
+                            reddit: true,
+                            yahooFinance: true,
+                            prNewswire: true,
+                            secEdgar: true
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h2>Success!</h2>
+                    <p>Total items: ${data.totalCount}</p>
+                    <p>Sources queried: ${data.sourcesQueried}</p>
+                    <p>First item title: ${data.items[0]?.title || 'N/A'}</p>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 1000)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<h2>Error!</h2><p>${error.message}</p>`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
